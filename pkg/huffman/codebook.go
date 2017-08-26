@@ -2,15 +2,59 @@ package huffman
 
 import (
 	"container/heap"
+	"fmt"
+	"sort"
 )
 
 //#############################################################################
 //# Exported
 //#############################################################################
+// A Codebook is an ordered collection detailing how symbols should be encoded.
+type Codebook []*codebookEntry
+
+// NewCanonicalCB returns a canonical Huffman codebook.
+func NewCanonicalCB(weightMap map[byte]float64) Codebook {
+	leaves := newHuffTree(weightMap)
+	cb := make(Codebook, len(leaves))
+	for i, leaf := range leaves {
+		cb[i] = &codebookEntry{leaf.val, "", 0}
+		for leaf.parent != nil {
+			cb[i].codeLen++
+			leaf = leaf.parent
+		}
+	}
+	// Entries are sorted first accoding to code length, then
+	// alphabetically within same length.
+	sort.Slice(cb, func(i, j int) bool {
+		if cb[i].codeLen < cb[j].codeLen {
+			return true
+		} else if cb[i].codeLen > cb[j].codeLen {
+			return false
+		}
+		return cb[i].unit < cb[j].unit
+	})
+	code := 0
+	i := 0
+	for ; i < len(cb)-1; i++ {
+		cb[i].code = fmt.Sprintf("%.*b", cb[i].codeLen, code)
+		code = (code + 1) << uint(cb[i+1].codeLen-cb[i].codeLen)
+	}
+	cb[i].code = fmt.Sprintf("%.*b", cb[i].codeLen, code)
+	return cb
+}
 
 //#############################################################################
 //# Unexported
 //#############################################################################
+//-----------------------------------------------------------------------------
+//- Codebook
+//-----------------------------------------------------------------------------
+type codebookEntry struct {
+	unit    byte
+	code    string
+	codeLen int
+}
+
 //-----------------------------------------------------------------------------
 //- Huffman Tree
 //-----------------------------------------------------------------------------
@@ -53,6 +97,7 @@ func (htpq *huffTreePQ) Pop() interface{} {
 // tree's leaves.
 func newHuffTree(weightMap map[byte]float64) (leaves []*huffTree) {
 	treePQ := make(huffTreePQ, len(weightMap))
+	leaves = make([]*huffTree, len(weightMap))
 	i := 0
 	for b, w := range weightMap {
 		leaf := &huffTree{b, w, nil, nil, nil}
