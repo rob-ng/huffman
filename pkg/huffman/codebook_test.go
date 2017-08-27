@@ -2,7 +2,6 @@ package huffman
 
 import (
 	"math/rand"
-	"strconv"
 	"testing"
 	"time"
 )
@@ -30,8 +29,10 @@ func TestNewCanonincalCB(t *testing.T) {
 		// 3. Between different code lengths, longer lengths should
 		//    be associated with smaller weights
 		for i := 0; i < len(cb)-1; i++ {
-			first, _ := strconv.ParseInt(cb[i].code, 2, 8)
-			second, _ := strconv.ParseInt(cb[i+1].code, 2, 8)
+			//first, _ := strconv.ParseInt(cb[i].code, 2, 8)
+			//second, _ := strconv.ParseInt(cb[i+1].code, 2, 8)
+			first := cb[i].code
+			second := cb[i+1].code
 			if first >= second {
 				t.Errorf("Code should be increasing")
 			} else if cb[i].codeLen > cb[i+1].codeLen {

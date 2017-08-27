@@ -2,7 +2,6 @@ package huffman
 
 import (
 	"container/heap"
-	"fmt"
 	"sort"
 )
 
@@ -17,7 +16,8 @@ func NewCanonicalCB(weightMap map[byte]float64) Codebook {
 	leaves := newHuffTree(weightMap)
 	cb := make(Codebook, len(leaves))
 	for i, leaf := range leaves {
-		cb[i] = &codebookEntry{leaf.val, "", 0}
+		//cb[i] = &codebookEntry{leaf.val, "", 0}
+		cb[i] = &codebookEntry{leaf.val, 0, 0}
 		for leaf.parent != nil {
 			cb[i].codeLen++
 			leaf = leaf.parent
@@ -36,10 +36,13 @@ func NewCanonicalCB(weightMap map[byte]float64) Codebook {
 	code := 0
 	i := 0
 	for ; i < len(cb)-1; i++ {
-		cb[i].code = fmt.Sprintf("%.*b", cb[i].codeLen, code)
+		cb[i].code = code
 		code = (code + 1) << uint(cb[i+1].codeLen-cb[i].codeLen)
+		//cb[i].code = fmt.Sprintf("%.*b", cb[i].codeLen, code)
+		//code = (code + 1) << uint(cb[i+1].codeLen-cb[i].codeLen)
 	}
-	cb[i].code = fmt.Sprintf("%.*b", cb[i].codeLen, code)
+	cb[i].code = code
+	//cb[i].code = fmt.Sprintf("%.*b", cb[i].codeLen, code)
 	return cb
 }
 
@@ -50,8 +53,9 @@ func NewCanonicalCB(weightMap map[byte]float64) Codebook {
 //- Codebook
 //-----------------------------------------------------------------------------
 type codebookEntry struct {
-	unit    byte
-	code    string
+	unit byte
+	code int
+	//code    string
 	codeLen int
 }
 
