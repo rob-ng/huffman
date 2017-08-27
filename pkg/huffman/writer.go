@@ -3,6 +3,8 @@ package huffman
 import (
 	"fmt"
 	"io"
+	"strconv"
+	"strings"
 )
 
 //#############################################################################
@@ -11,7 +13,6 @@ import (
 
 // A Writer
 type Writer struct {
-	Header      huffmanHeader
 	wroteHeader bool
 	w           io.Writer
 	encTable    encodingTable
@@ -28,9 +29,8 @@ func NewWriter(w io.Writer, cb Codebook) *Writer {
 		fmt.Printf("unit: %b, code: %s\n", entry.unit, entry.code)
 	}
 	return &Writer{
-		Header:      huffmanHeader{},
-		wroteHeader: false,
 		w:           w,
+		wroteHeader: false,
 		encTable:    encTable,
 		codebook:    cb,
 		currByte:    0,
@@ -44,8 +44,9 @@ func NewWriter(w io.Writer, cb Codebook) *Writer {
 func (hw *Writer) Write(p []byte) (n int, err error) {
 	n = 0
 	if !hw.wroteHeader {
+		fmt.Printf("cb length is: %d\n", len(hw.codebook))
 		hw.wroteHeader = true
-		fmt.Printf("writing header...")
+		hw.writeHeader()
 	}
 	for _, b := range p {
 		bits := hw.encTable[b]
@@ -79,9 +80,30 @@ func (hw *Writer) Flush() error {
 //#############################################################################
 //# Unexported
 //#############################################################################
-type huffmanHeader struct {
-	bitLens  []byte
-	alphabet []byte
+// writeHeader writes a description of the codebook to the underlying writer.
+// The first line of the header describes how many units have a particular
+// code length (starting at 1).
+// The second line lists the units in order of increasing code length.
+func (hw *Writer) writeHeader() error {
+	curr := 0
+	totals := make([]string, len(hw.codebook))
+	units := make([]byte, len(hw.codebook))
+	for i, e := range hw.codebook {
+		if curr < len(hw.codebook) {
+			total := 0
+			for curr < len(hw.codebook) && hw.codebook[curr].codeLen == (i+1) {
+				total++
+				curr++
+			}
+			totals[i] = strconv.Itoa(total)
+		}
+		units[i] = e.unit
+	}
+	io.WriteString(hw.w, strings.Trim(strings.Join(totals, " "), " "))
+	hw.w.Write([]byte{'\n'})
+	hw.w.Write(units)
+	hw.w.Write([]byte{'\n'})
+	return nil
 }
 
 type encodingTable map[byte]string
