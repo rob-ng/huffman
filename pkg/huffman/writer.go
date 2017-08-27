@@ -1,7 +1,6 @@
 package huffman
 
 import (
-	"fmt"
 	"io"
 	"strconv"
 	"strings"
@@ -26,7 +25,6 @@ func NewWriter(w io.Writer, cb Codebook) *Writer {
 	encTable := make(encodingTable)
 	for _, entry := range cb {
 		encTable[entry.unit] = entry.code
-		fmt.Printf("unit: %b, code: %s\n", entry.unit, entry.code)
 	}
 	return &Writer{
 		w:           w,
@@ -44,7 +42,6 @@ func NewWriter(w io.Writer, cb Codebook) *Writer {
 func (hw *Writer) Write(p []byte) (n int, err error) {
 	n = 0
 	if !hw.wroteHeader {
-		fmt.Printf("cb length is: %d\n", len(hw.codebook))
 		hw.wroteHeader = true
 		hw.writeHeader()
 	}
