@@ -16,7 +16,6 @@ func NewCanonicalCB(weightMap map[byte]float64) Codebook {
 	leaves := newHuffTree(weightMap)
 	cb := make(Codebook, len(leaves))
 	for i, leaf := range leaves {
-		//cb[i] = &codebookEntry{leaf.val, "", 0}
 		cb[i] = &codebookEntry{leaf.val, 0, 0}
 		for leaf.parent != nil {
 			cb[i].codeLen++
@@ -38,11 +37,29 @@ func NewCanonicalCB(weightMap map[byte]float64) Codebook {
 	for ; i < len(cb)-1; i++ {
 		cb[i].code = code
 		code = (code + 1) << uint(cb[i+1].codeLen-cb[i].codeLen)
-		//cb[i].code = fmt.Sprintf("%.*b", cb[i].codeLen, code)
-		//code = (code + 1) << uint(cb[i+1].codeLen-cb[i].codeLen)
 	}
 	cb[i].code = code
-	//cb[i].code = fmt.Sprintf("%.*b", cb[i].codeLen, code)
+	return cb
+}
+
+func DeriveCanonicalCB(header *Header) Codebook {
+	code := 0
+	li := 0
+	i := 0
+	h := *header
+	cb := make(Codebook, len(h.alphabet))
+	for ; li < len(h.lenCounts); li++ {
+		for h.lenCounts[li] > 0 {
+			cb[i] = &codebookEntry{h.alphabet[i], code, li + 1}
+			h.lenCounts[li]--
+			liNext := li
+			for liNext < len(h.lenCounts) && h.lenCounts[liNext] == 0 {
+				liNext++
+			}
+			code = (code + 1) << uint(liNext-li)
+			i++
+		}
+	}
 	return cb
 }
 
@@ -53,9 +70,8 @@ func NewCanonicalCB(weightMap map[byte]float64) Codebook {
 //- Codebook
 //-----------------------------------------------------------------------------
 type codebookEntry struct {
-	unit byte
-	code int
-	//code    string
+	unit    byte
+	code    int
 	codeLen int
 }
 
