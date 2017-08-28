@@ -3,10 +3,14 @@ package huffman
 import (
 	"bufio"
 	"bytes"
+	"strings"
 	"testing"
 )
 
 func TestRead(t *testing.T) {
+	utf8src := `©©©»»»»かかπ`
+	br := bufio.NewReader(strings.NewReader(utf8src))
+	utf8WM, _ := MakeWeightMap(br)
 	testInputs := []struct {
 		src string
 		cb  Codebook
@@ -19,6 +23,9 @@ func TestRead(t *testing.T) {
 				51: 0.2,
 				52: 0.1,
 			}),
+		}, {
+			utf8src,
+			NewCanonicalCB(utf8WM),
 		},
 	}
 
