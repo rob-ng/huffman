@@ -7,6 +7,10 @@ import (
 	"strings"
 )
 
+//#############################################################################
+//# Exported
+//#############################################################################
+
 type Reader struct {
 	headerRead bool
 	r          *bufio.Reader
@@ -71,12 +75,15 @@ func (hr *Reader) Read(p []byte) (n int, err error) {
 	return n, nil
 }
 
-type decodeTable map[int]*decodeTableEntry
+//#############################################################################
+//# Unexported
+//#############################################################################
 
 type decodeTableEntry struct {
 	unit    byte
 	codeLen int
 }
+type decodeTable map[int]*decodeTableEntry
 
 func (hr *Reader) readHeader() *Header {
 	h1, _ := hr.r.ReadString('\n')

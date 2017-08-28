@@ -83,6 +83,13 @@ func (hw *Writer) Flush() error {
 //#############################################################################
 //# Unexported
 //#############################################################################
+
+type encodingTableEntry struct {
+	code    int
+	codeLen int
+}
+type encodingTable map[byte]encodingTableEntry
+
 // writeHeader writes a description of the codebook to the underlying writer.
 // The first line of the header describes how many units have a particular
 // code length (starting at 1).
@@ -107,12 +114,4 @@ func (hw *Writer) writeHeader() error {
 	hw.w.Write(units)
 	hw.w.Write([]byte{'\n'})
 	return nil
-}
-
-//type encodingTable map[byte]string
-type encodingTable map[byte]encodingTableEntry
-
-type encodingTableEntry struct {
-	code    int
-	codeLen int
 }
