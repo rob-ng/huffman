@@ -24,7 +24,7 @@ type Writer struct {
 func NewWriter(w io.Writer, cb Codebook) *Writer {
 	encTable := make(encodingTable)
 	for _, entry := range cb {
-		encTable[entry.unit] = entry.code
+		encTable[entry.unit] = encodingTableEntry{entry.code, entry.codeLen}
 	}
 	return &Writer{
 		w:           w,
@@ -46,9 +46,15 @@ func (hw *Writer) Write(p []byte) (n int, err error) {
 		hw.writeHeader()
 	}
 	for _, b := range p {
-		bits := hw.encTable[b]
-		for _, bit := range bits {
-			hw.currByte = (hw.currByte << 1) | byte(bit-'0')
+		enc := hw.encTable[b]
+		bitArray := make([]int, enc.codeLen)
+		for i := 0; i < enc.codeLen; i++ {
+			// Get least significant bit
+			bitArray[enc.codeLen-1-i] = enc.code & -enc.code
+			enc.code >>= 1
+		}
+		for _, bit := range bitArray {
+			hw.currByte = (hw.currByte << 1) | byte(bit)
 			hw.bitsWritten++
 			if hw.bitsWritten == 8 {
 				hw.w.Write([]byte{hw.currByte})
@@ -103,4 +109,10 @@ func (hw *Writer) writeHeader() error {
 	return nil
 }
 
-type encodingTable map[byte]string
+//type encodingTable map[byte]string
+type encodingTable map[byte]encodingTableEntry
+
+type encodingTableEntry struct {
+	code    int
+	codeLen int
+}

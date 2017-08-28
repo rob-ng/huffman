@@ -1,9 +1,7 @@
 package huffman
 
 import (
-	"bufio"
 	"bytes"
-	"io"
 	"strconv"
 	"strings"
 	"testing"
@@ -33,27 +31,16 @@ func TestWrite(t *testing.T) {
 	}
 
 	for _, ti := range testInputs {
-		in := bufio.NewReader(strings.NewReader(ti.src))
 		var out bytes.Buffer
 
 		hw := NewWriter(&out, ti.cb)
-
-		for {
-			bite, err := in.ReadByte()
-			if err != nil {
-				if err == io.EOF {
-					break
-				} else {
-					t.Errorf("Encountered error: %s", err)
-				}
-			}
-			hw.Write([]byte{bite})
+		for _, c := range ti.src {
+			hw.Write([]byte(string(c)))
 		}
 		hw.Flush()
 
 		header1, _ := out.ReadString('\n')
-		header1 = header1[0 : len(header1)-1]
-		header1Values := strings.Split(header1, " ")
+		header1Values := strings.Split(strings.Trim(header1, "\n"), " ")
 		header1Total := 0
 		for _, n := range header1Values {
 			val, _ := strconv.Atoi(n)
@@ -64,11 +51,10 @@ func TestWrite(t *testing.T) {
 		}
 
 		header2, _ := out.ReadString('\n')
-		header2 = header2[0 : len(header2)-1]
+		header2 = strings.Trim(header2, "\n")
 		if len(header2) != len(ti.cb) {
 			t.Errorf("Second line of header should be exactly as long as codebook")
 		}
-
 		_, err := out.ReadByte()
 		if err != nil {
 			t.Errorf("Body should not be empty")
