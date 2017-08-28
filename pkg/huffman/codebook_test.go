@@ -23,23 +23,48 @@ func TestNewCanonincalCB(t *testing.T) {
 
 	for _, ti := range testInputs {
 		cb := NewCanonicalCB(ti)
-		// 3 invariants
+		// 4 invariants
 		// 1. Value of code is strictly increasing
 		// 2. Code length is increasing
 		// 3. Between different code lengths, longer lengths should
 		//    be associated with smaller weights
+		// 4. No code is prefix of any other code
 		for i := 0; i < len(cb)-1; i++ {
-			//first, _ := strconv.ParseInt(cb[i].code, 2, 8)
-			//second, _ := strconv.ParseInt(cb[i+1].code, 2, 8)
 			first := cb[i].code
 			second := cb[i+1].code
 			if first >= second {
-				t.Errorf("Code should be increasing")
+				t.Errorf("Code should be strictly increasing")
 			} else if cb[i].codeLen > cb[i+1].codeLen {
 				t.Errorf("Code len should be increasing")
 			} else if cb[i].codeLen != cb[i+1].codeLen &&
 				ti[cb[i].unit] < ti[cb[i+1].unit] {
-				t.Errorf("Frequency decrasing!")
+				t.Errorf("Code length should be correlated with weight")
+			}
+		}
+	}
+}
+
+func TestDeriveCanonicalCB(t *testing.T) {
+	deriveTests := []struct {
+		header   *Header
+		codes    []int
+		codeLens []int
+	}{
+		{
+			&Header{[]int{1, 1, 2}, []byte("abcd")},
+			[]int{0, 2, 6, 7},
+			[]int{1, 2, 3, 3},
+		},
+	}
+
+	for _, dt := range deriveTests {
+		cb := DeriveCanonicalCB(dt.header)
+		for i, e := range cb {
+			if dt.codes[i] != e.code {
+				t.Errorf("Incorrect code! Was %d, expected %d", e.code, dt.codes[i])
+			}
+			if dt.codeLens[i] != e.codeLen {
+				t.Errorf("Incorrect code length! Was %d, expected %d", e.codeLen, dt.codeLens[i])
 			}
 		}
 	}
