@@ -39,7 +39,8 @@ func (hw *Writer) Write(p []byte) (n int, err error) {
 	n = 0
 	if !hw.wroteHeader {
 		hw.wroteHeader = true
-		io.WriteString(hw.w, hw.h.String())
+		//io.WriteString(hw.w, hw.h.String())
+		hw.w.Write([]byte(hw.h.String()))
 	}
 	for _, b := range p {
 		enc := hw.encoder[b]
