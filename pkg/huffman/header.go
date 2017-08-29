@@ -85,6 +85,10 @@ func NewHeader(unitWeights map[byte]float64, numUnits int) *Header {
 			code:    0,
 			codeLen: 0,
 		}
+		for leaf.parent != nil {
+			cb[i].codeLen++
+			leaf = leaf.parent
+		}
 	}
 	// Codebook entries are sorted first according to code length, then
 	// alphabetically within same length.
