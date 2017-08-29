@@ -87,7 +87,6 @@ type decodeTable map[int]*decodeTableEntry
 
 func (hr *Reader) readHeader() *Header {
 	h1, _ := hr.r.ReadString('\n')
-	//h1, _ := hr.r.ReadBytes('\n')
 	h2, _ := hr.r.ReadBytes('\n')
 
 	h1Split := strings.Split(strings.Trim(h1, "\n"), " ")
