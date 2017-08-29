@@ -36,6 +36,7 @@ func (h *Header) String() string {
 	}
 	totalsStr := make([]string, maxBitLen)
 	for i, _ := range totals {
+		// Error handling later
 		totalsStr[i] = strconv.Itoa(totals[i])
 	}
 	numUnits := h.numUnits
@@ -113,7 +114,38 @@ func NewHeader(unitWeights map[byte]float64, numUnits int) *Header {
 // In nearly all cases, headerDesc should be the first n lines of an encoded
 // file, the last ending with 'headerDelim'.
 func DeriveHeader(headerDesc string) *Header {
-	return nil
+	lines := strings.Split(headerDesc, "\n")
+	line0 := strings.Split(lines[0], " ")
+	totals := make([]int, len(line0))
+	for i, t := range line0 {
+		// Error handling later
+		totals[i], _ = strconv.Atoi(t)
+	}
+	units := []byte(lines[1])
+	// Error handling later
+	numUnits, _ := strconv.Atoi(lines[2])
+
+	code := 0
+	i := 0
+	cb := make(codebook, len(units))
+	for ti := 0; ti < len(totals); ti++ {
+		for totals[ti] > 0 {
+			cb[i] = &cbEntry{units[i], code, ti + 1}
+			totals[ti]--
+			tiNext := ti
+			for tiNext < len(totals) && totals[tiNext] == 0 {
+				tiNext++
+			}
+			code = (code + 1) << uint(tiNext-ti)
+			i++
+		}
+	}
+
+	header := &Header{
+		cb:       cb,
+		numUnits: numUnits,
+	}
+	return header
 }
 
 //=============================================================================
