@@ -1,7 +1,6 @@
 package huffman
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -15,7 +14,7 @@ func TestHeaderString(t *testing.T) {
 		numUnits: 10,
 	}
 
-	fmt.Println(h.String())
+	h.String()
 }
 
 // Will want to also check that no code is prefix of any other
