@@ -41,6 +41,30 @@ func (h *Header) String() string {
 	return fmt.Sprintf("%s\n%s\n%d\n%s", line1, line2, line3, headerDelim)
 }
 
+// ExtractEncoder uses the Header's codebook to create a map between units and
+// their associated code and code length.
+func (h *Header) ExtractEncoder() encoder {
+	enc := make(encoder)
+	for _, e := range h.cb {
+		v := enc[e.unit]
+		v.code = e.code
+		v.codeLen = e.codeLen
+	}
+	return enc
+}
+
+// ExtractDecoder uses the Header's codebook to create a map between codes and
+// their associated unit and code length.
+func (h *Header) ExtractDecoder() decoder {
+	dec := make(decoder)
+	for _, e := range h.cb {
+		v := dec[e.code]
+		v.unit = e.unit
+		v.codeLen = e.codeLen
+	}
+	return dec
+}
+
 // NewHeader creates and returns a pointer to a new Header.
 // To do this, it needs to be given the number of units (bytes) in the file, as
 // well as a weight for each such unit (usually its frequency within the file).
@@ -67,3 +91,13 @@ type cbEntry struct {
 	codeLen int
 }
 type codebook []*cbEntry
+
+type encoder map[byte]struct {
+	code    int
+	codeLen int
+}
+
+type decoder map[int]struct {
+	unit    byte
+	codeLen int
+}
