@@ -57,6 +57,7 @@ func (h *Header) ExtractEncoder() encoder {
 		v := enc[e.unit]
 		v.code = e.code
 		v.codeLen = e.codeLen
+		enc[e.unit] = v
 	}
 	return enc
 }
@@ -69,6 +70,7 @@ func (h *Header) ExtractDecoder() decoder {
 		v := dec[e.code]
 		v.unit = e.unit
 		v.codeLen = e.codeLen
+		dec[e.code] = v
 	}
 	return dec
 }
