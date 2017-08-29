@@ -3,39 +3,37 @@ package huffman
 import (
 	"bufio"
 	"bytes"
-	"strings"
 	"testing"
 )
 
 func TestRead(t *testing.T) {
-	utf8src := `©©©»»»»かかπ`
-	br := bufio.NewReader(strings.NewReader(utf8src))
-	utf8WM, _ := MakeWeightMap(br)
+	//utf8src := "©©©»»»»かかπ"
+	//br := bufio.NewReader(strings.NewReader(utf8src))
+	//utf8WM, _ := MakeWeightMap(br)
 	testInputs := []struct {
 		src string
-		cb  Codebook
+		//cb  Codebook
+		h *Header
 	}{
 		{
 			"1112222334",
-			NewCanonicalCB(map[byte]float64{
+			NewHeader(map[byte]float64{
 				49: 0.3,
 				50: 0.4,
 				51: 0.2,
 				52: 0.1,
-			}),
-		}, {
+			}, 10),
+		}, /*{
 			utf8src,
-			NewCanonicalCB(utf8WM),
-		},
+			NewHeader(utf8WM, 10),
+		},*/
 	}
 
 	for _, ti := range testInputs {
 		var out bytes.Buffer
 
-		hw := NewWriter(&out, ti.cb)
-		for _, c := range ti.src {
-			hw.Write([]byte(string(c)))
-		}
+		hw := NewWriter(&out, ti.h)
+		hw.Write([]byte(ti.src))
 		hw.Flush()
 
 		r := bufio.NewReader(&out)
@@ -46,7 +44,8 @@ func TestRead(t *testing.T) {
 
 		for i, _ := range out2 {
 			if out2[i] != ti.src[i] {
-				t.Errorf("Decoded data should equal source data")
+				t.Errorf("Decoded data should equal source data. Was: %d, Expected; %d\n",
+					out2[i], ti.src[i])
 			}
 		}
 	}

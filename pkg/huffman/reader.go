@@ -2,9 +2,8 @@ package huffman
 
 import (
 	"bufio"
+	"bytes"
 	"io"
-	"strconv"
-	"strings"
 )
 
 //#############################################################################
@@ -14,38 +13,29 @@ import (
 type Reader struct {
 	headerRead bool
 	r          *bufio.Reader
+	h          *Header
+	decoder    decoder
 	readBuf    int
 	bitsRead   int
-	decTable   decodeTable
-}
-
-type Header struct {
-	lenCounts []int
-	alphabet  []byte
 }
 
 func NewReader(r *bufio.Reader) *Reader {
-	dt := make(decodeTable)
 	return &Reader{
 		headerRead: false,
 		r:          r,
+		h:          nil,
+		decoder:    nil,
 		readBuf:    0,
 		bitsRead:   0,
-		decTable:   dt,
 	}
 }
 
 func (hr *Reader) Read(p []byte) (n int, err error) {
 	if !hr.headerRead {
 		hr.headerRead = true
-		header := hr.readHeader()
-		cb := DeriveCanonicalCB(header)
-		for _, entry := range cb {
-			hr.decTable[entry.code] = &decodeTableEntry{
-				unit:    entry.unit,
-				codeLen: entry.codeLen,
-			}
-		}
+		headerDesc := hr.readHeader()
+		hr.h = DeriveHeader(headerDesc)
+		hr.decoder = hr.h.ExtractDecoder()
 	}
 
 	n = 0
@@ -54,15 +44,15 @@ func (hr *Reader) Read(p []byte) (n int, err error) {
 		currByte, _ := hr.r.ReadByte()
 		var j uint
 		for ; j < 8; j++ {
+			if n >= hr.h.numUnits {
+				return 0, io.EOF
+			}
 			currBit := int((currByte >> (7 - j)) & 1)
 			hr.readBuf = (hr.readBuf << 1) | currBit
 			hr.bitsRead++
-			if n >= len(p) {
-				return 0, io.EOF
-			}
-			if _, ok := hr.decTable[hr.readBuf]; ok {
-				if hr.bitsRead == hr.decTable[hr.readBuf].codeLen {
-					p[bi] = hr.decTable[hr.readBuf].unit
+			if _, ok := hr.decoder[hr.readBuf]; ok {
+				if hr.bitsRead == hr.decoder[hr.readBuf].codeLen {
+					p[bi] = hr.decoder[hr.readBuf].unit
 					bi++
 					n++
 					hr.bitsRead = 0
@@ -79,27 +69,19 @@ func (hr *Reader) Read(p []byte) (n int, err error) {
 //# Unexported
 //#############################################################################
 
-type decodeTableEntry struct {
-	unit    byte
-	codeLen int
-}
-type decodeTable map[int]*decodeTableEntry
+// Before read second line via ReadBytes
+func (hr *Reader) readHeader() string {
+	var buf bytes.Buffer
+	for {
+		// Error handling later
+		line, _ := hr.r.ReadString('\n')
+		//line, _ := hr.r.ReadBytes('\n')
+		if len(line) <= 1 {
+			break
+		}
+		buf.WriteString(line)
+		//buf.WriteBytes(line)
 
-func (hr *Reader) readHeader() *Header {
-	h1, _ := hr.r.ReadString('\n')
-	h2, _ := hr.r.ReadBytes('\n')
-
-	h1Split := strings.Split(strings.Trim(h1, "\n"), " ")
-	h2 = h2[0 : len(h2)-1]
-
-	lenCounts := make([]int, len(h1Split))
-	for i, c := range h1Split {
-		lenCounts[i], _ = strconv.Atoi(c)
 	}
-
-	return &Header{
-		lenCounts,
-		h2,
-	}
-	return nil
+	return buf.String()
 }
