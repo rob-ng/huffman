@@ -57,6 +57,7 @@ func (h *Header) ExtractEncoder() encoder {
 		v := enc[e.unit]
 		v.code = e.code
 		v.codeLen = e.codeLen
+		enc[e.unit] = v
 	}
 	return enc
 }
@@ -69,6 +70,7 @@ func (h *Header) ExtractDecoder() decoder {
 		v := dec[e.code]
 		v.unit = e.unit
 		v.codeLen = e.codeLen
+		dec[e.code] = v
 	}
 	return dec
 }
@@ -84,6 +86,10 @@ func NewHeader(unitWeights map[byte]float64, numUnits int) *Header {
 			unit:    leaf.val,
 			code:    0,
 			codeLen: 0,
+		}
+		for leaf.parent != nil {
+			cb[i].codeLen++
+			leaf = leaf.parent
 		}
 	}
 	// Codebook entries are sorted first according to code length, then

@@ -2,8 +2,6 @@ package huffman
 
 import (
 	"io"
-	"strconv"
-	"strings"
 )
 
 //#############################################################################
@@ -14,23 +12,21 @@ import (
 type Writer struct {
 	wroteHeader bool
 	w           io.Writer
-	encTable    encodingTable
-	codebook    Codebook
+	h           *Header
+	encoder     encoder
 	currByte    byte
 	bitsWritten int
 }
 
 // NewWriter acts as a constructor for Writer.
-func NewWriter(w io.Writer, cb Codebook) *Writer {
-	encTable := make(encodingTable)
-	for _, entry := range cb {
-		encTable[entry.unit] = encodingTableEntry{entry.code, entry.codeLen}
-	}
+//func NewWriter(w io.Writer, cb Codebook) *Writer {
+func NewWriter(w io.Writer, h *Header) *Writer {
+	enc := h.ExtractEncoder()
 	return &Writer{
 		w:           w,
 		wroteHeader: false,
-		encTable:    encTable,
-		codebook:    cb,
+		h:           h,
+		encoder:     enc,
 		currByte:    0,
 		bitsWritten: 0,
 	}
@@ -43,10 +39,10 @@ func (hw *Writer) Write(p []byte) (n int, err error) {
 	n = 0
 	if !hw.wroteHeader {
 		hw.wroteHeader = true
-		hw.writeHeader()
+		io.WriteString(hw.w, hw.h.String())
 	}
 	for _, b := range p {
-		enc := hw.encTable[b]
+		enc := hw.encoder[b]
 		bitArray := make([]int, enc.codeLen)
 		for i := 0; i < enc.codeLen; i++ {
 			// Get least significant bit
@@ -77,41 +73,5 @@ func (hw *Writer) Flush() error {
 		}
 		hw.w.Write([]byte{hw.currByte})
 	}
-	return nil
-}
-
-//#############################################################################
-//# Unexported
-//#############################################################################
-
-type encodingTableEntry struct {
-	code    int
-	codeLen int
-}
-type encodingTable map[byte]encodingTableEntry
-
-// writeHeader writes a description of the codebook to the underlying writer.
-// The first line of the header describes how many units have a particular
-// code length (starting at 1).
-// The second line lists the units in order of increasing code length.
-func (hw *Writer) writeHeader() error {
-	curr := 0
-	totals := make([]string, len(hw.codebook))
-	units := make([]byte, len(hw.codebook))
-	for i, e := range hw.codebook {
-		if curr < len(hw.codebook) {
-			total := 0
-			for curr < len(hw.codebook) && hw.codebook[curr].codeLen == (i+1) {
-				total++
-				curr++
-			}
-			totals[i] = strconv.Itoa(total)
-		}
-		units[i] = e.unit
-	}
-	io.WriteString(hw.w, strings.Trim(strings.Join(totals, " "), " "))
-	hw.w.Write([]byte{'\n'})
-	hw.w.Write(units)
-	hw.w.Write([]byte{'\n'})
 	return nil
 }
