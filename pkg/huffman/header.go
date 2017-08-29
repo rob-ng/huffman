@@ -12,6 +12,7 @@ import (
 //= Exported
 //=============================================================================
 
+// A Header
 type Header struct {
 	cb       codebook
 	numUnits int
@@ -181,7 +182,6 @@ type huffTree struct {
 	right  *huffTree
 	parent *huffTree
 }
-
 type huffTreePQ []*huffTree
 
 func (htpq huffTreePQ) Len() int { return len(htpq) }
