@@ -159,7 +159,7 @@ func DeriveHeader(headerDesc string) *Header {
 //= Unexported
 //=============================================================================
 
-const headerDelim = "\r\n"
+const headerDelim = "\n"
 
 type cbEntry struct {
 	unit    byte
