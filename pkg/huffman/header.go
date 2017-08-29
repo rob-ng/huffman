@@ -1,7 +1,9 @@
 package huffman
 
 import (
+	"container/heap"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -15,6 +17,10 @@ type Header struct {
 	numUnits int
 }
 
+// String returns a string "representation" of the header.
+// This string is intended to be writen to the top of the output file during
+// encoding. The string contains enough information so that during decoding,
+// the original Header can be recreated.
 func (h *Header) String() string {
 	maxBitLen := 0
 	for _, e := range h.cb {
@@ -69,7 +75,38 @@ func (h *Header) ExtractDecoder() decoder {
 // To do this, it needs to be given the number of units (bytes) in the file, as
 // well as a weight for each such unit (usually its frequency within the file).
 func NewHeader(unitWeights map[byte]float64, numUnits int) *Header {
-	return nil
+	leaves := newHuffTree(unitWeights)
+	cb := make(codebook, len(leaves))
+	for i, leaf := range leaves {
+		cb[i] = &cbEntry{
+			unit:    leaf.val,
+			code:    0,
+			codeLen: 0,
+		}
+	}
+	// Codebook entries are sorted first according to code length, then
+	// alphabetically within same length.
+	sort.Slice(cb, func(i, j int) bool {
+		if cb[i].codeLen < cb[j].codeLen {
+			return true
+		} else if cb[i].codeLen > cb[j].codeLen {
+			return false
+		}
+		return cb[i].unit < cb[j].unit
+	})
+	code := 0
+	i := 0
+	for ; i < len(cb)-1; i++ {
+		cb[i].code = code
+		code = (code + 1) << uint(cb[i+1].codeLen-cb[i].codeLen)
+	}
+	cb[i].code = code
+
+	header := &Header{
+		cb:       cb,
+		numUnits: numUnits,
+	}
+	return header
 }
 
 // DeriveHeader recreates the Header described by headerDesc.
@@ -100,4 +137,68 @@ type encoder map[byte]struct {
 type decoder map[int]struct {
 	unit    byte
 	codeLen int
+}
+
+//-----------------------------------------------------------------------------
+//- Huffman Tree
+//-----------------------------------------------------------------------------
+type huffTree struct {
+	val    byte
+	weight float64
+	left   *huffTree
+	right  *huffTree
+	parent *huffTree
+}
+
+type huffTreePQ []*huffTree
+
+func (htpq huffTreePQ) Len() int { return len(htpq) }
+
+func (htpq huffTreePQ) Less(i, j int) bool {
+	return htpq[i].weight < htpq[j].weight
+}
+
+func (htpq huffTreePQ) Swap(i, j int) {
+	htpq[i], htpq[j] = htpq[j], htpq[i]
+}
+
+func (htpq *huffTreePQ) Push(x interface{}) {
+	item := x.(*huffTree)
+	*htpq = append(*htpq, item)
+}
+
+func (htpq *huffTreePQ) Pop() interface{} {
+	old := *htpq
+	n := len(old)
+	item := old[n-1]
+	*htpq = old[0 : n-1]
+	return item
+}
+
+// newHuffTree creates a new Huffman tree.
+// The function returns the leaves of the tree, rather than its root.
+// This was done because most callers of this function want access to the
+// tree's leaves.
+func newHuffTree(weightMap map[byte]float64) (leaves []*huffTree) {
+	treePQ := make(huffTreePQ, len(weightMap))
+	leaves = make([]*huffTree, len(weightMap))
+	i := 0
+	for b, w := range weightMap {
+		leaf := &huffTree{b, w, nil, nil, nil}
+		treePQ[i] = leaf
+		leaves[i] = leaf
+		i++
+	}
+	heap.Init(&treePQ)
+
+	for treePQ.Len() > 1 {
+		min1 := heap.Pop(&treePQ).(*huffTree)
+		min2 := heap.Pop(&treePQ).(*huffTree)
+		comb := &huffTree{0, min1.weight + min2.weight, min1, min2, nil}
+		min1.parent = comb
+		min2.parent = comb
+		heap.Push(&treePQ, comb)
+	}
+
+	return
 }
