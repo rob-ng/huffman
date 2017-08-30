@@ -15,8 +15,12 @@ type Reader struct {
 	r          *bufio.Reader
 	h          *Header
 	decoder    decoder
-	readBuf    int
+	codeBuf    int
 	bitsRead   int
+	totalBytes int
+	currByte   byte
+	bitPos     uint
+	readNext   bool
 }
 
 func NewReader(r *bufio.Reader) *Reader {
@@ -25,8 +29,12 @@ func NewReader(r *bufio.Reader) *Reader {
 		r:          r,
 		h:          nil,
 		decoder:    nil,
-		readBuf:    0,
+		codeBuf:    0,
 		bitsRead:   0,
+		totalBytes: 0,
+		currByte:   0,
+		bitPos:     0,
+		readNext:   true,
 	}
 }
 
@@ -40,36 +48,45 @@ func (hr *Reader) Read(p []byte) (n int, err error) {
 
 	n = 0
 	bi := 0
-	for i := 0; i < len(p); i++ {
-		currByte, _ := hr.r.ReadByte()
-		var j uint
-		for ; j < 8; j++ {
-			if n >= hr.h.numUnits {
-				return 0, io.EOF
+	for {
+		if hr.readNext {
+			b, err := hr.r.ReadByte()
+			if err != nil {
+				return 0, nil
 			}
-			currBit := int((currByte >> (7 - j)) & 1)
-			hr.readBuf = (hr.readBuf << 1) | currBit
+			hr.currByte = b
+		}
+		for ; hr.bitPos < 8; hr.bitPos++ {
+			if n == len(p) {
+				hr.readNext = false
+				return n, nil
+			} else if hr.totalBytes >= hr.h.numUnits {
+				return n, io.EOF
+			}
+			currBit := int((hr.currByte >> (7 - hr.bitPos)) & 1)
+			hr.codeBuf = (hr.codeBuf << 1) | currBit
 			hr.bitsRead++
-			if _, ok := hr.decoder[hr.readBuf]; ok {
-				if hr.bitsRead == hr.decoder[hr.readBuf].codeLen {
-					p[bi] = hr.decoder[hr.readBuf].unit
+			if _, ok := hr.decoder[hr.codeBuf]; ok {
+				if hr.bitsRead == hr.decoder[hr.codeBuf].codeLen {
+					p[bi] = hr.decoder[hr.codeBuf].unit
 					bi++
 					n++
+					hr.totalBytes++
+					hr.codeBuf = 0
 					hr.bitsRead = 0
-					hr.readBuf = 0
 				}
 			}
 		}
+		hr.readNext = true
+		hr.bitPos = 0
 	}
-
-	return n, nil
+	return
 }
 
 //#############################################################################
 //# Unexported
 //#############################################################################
 
-// Before read second line via ReadBytes
 func (hr *Reader) readHeader() string {
 	var buf bytes.Buffer
 	for {
