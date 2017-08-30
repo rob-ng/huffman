@@ -65,7 +65,13 @@ func TestDeriveHeader(t *testing.T) {
 		numUnits int
 	}{
 		{
-			"1 1 2\nabcd\n10\n\r\n",
+			"1 1 2\r\nabcd\r\n10\r\n\r\n",
+			4,
+			10,
+		},
+		// Should work if '\n' is a unit
+		{
+			"1 1 2\r\na\ned\r\n10\r\n\r\n",
 			4,
 			10,
 		},

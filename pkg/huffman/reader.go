@@ -74,14 +74,11 @@ func (hr *Reader) readHeader() string {
 	var buf bytes.Buffer
 	for {
 		// Error handling later
-		line, _ := hr.r.ReadString('\n')
-		//line, _ := hr.r.ReadBytes('\n')
-		if len(line) <= 1 {
-			break
-		}
+		line, _ := hr.r.ReadString(headerDelim[len(headerDelim)-1])
 		buf.WriteString(line)
-		//buf.WriteBytes(line)
-
+		if len(line) == len(headerDelim) && bytes.HasSuffix(buf.Bytes(), []byte(headerDelim)) {
+			bufStr := buf.String()
+			return bufStr[0 : len(bufStr)-len(headerDelim)]
+		}
 	}
-	return buf.String()
 }
