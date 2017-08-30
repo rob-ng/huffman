@@ -3,6 +3,7 @@ package huffman
 import (
 	"container/heap"
 	"fmt"
+	"io"
 	"sort"
 	"strconv"
 	"strings"
@@ -116,6 +117,36 @@ func NewHeader(unitWeights map[byte]float64, numUnits int) *Header {
 		numUnits: numUnits,
 	}
 	return header
+}
+
+// NewHeaderFromReader reads data from a data stream, recording the values in
+// the stream and their frequency. This information is then used to create and
+// return a Header.
+func NewHeaderFromReader(in io.Reader) (*Header, error) {
+	//weightMap = make(map[byte]float64)
+	unitWeights := make(map[byte]float64)
+	var numUnits float64
+	currUnit := make([]byte, 1)
+	for {
+		_, err := in.Read(currUnit)
+		if err != nil {
+			if err == io.EOF {
+				break
+			} else {
+				return nil, err
+			}
+		}
+		if _, ok := unitWeights[currUnit[0]]; !ok {
+			unitWeights[currUnit[0]] = 0
+		}
+		unitWeights[currUnit[0]]++
+		numUnits++
+	}
+	for i, _ := range unitWeights {
+		unitWeights[i] = unitWeights[i] / numUnits
+	}
+
+	return NewHeader(unitWeights, int(numUnits)), nil
 }
 
 // DeriveHeader recreates the Header described by headerDesc.

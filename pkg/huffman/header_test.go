@@ -1,6 +1,7 @@
 package huffman
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -53,6 +54,36 @@ func TestNewHeader(t *testing.T) {
 				ti.unitWeights[first.unit] < ti.unitWeights[second.unit] {
 				t.Errorf("Larger weight should be correlated with shorter code. i: %d, i+1: %d\n",
 					ti.unitWeights[first.unit], ti.unitWeights[second.unit])
+			}
+		}
+	}
+}
+
+func TestNewHeaderFromReader(t *testing.T) {
+	testInputs := []struct {
+		src string
+	}{
+		{src: "thisisatestsourcestring"},
+	}
+	for _, ti := range testInputs {
+		r := strings.NewReader(ti.src)
+		h, err := NewHeaderFromReader(r)
+		if err != nil {
+			t.Errorf("Should have succesfully created new Header. Error: %s\n", err.Error())
+		}
+		if h.numUnits != len(ti.src) {
+			t.Errorf("Num units should match input. Was: %d, Expected: %d\n",
+				h.numUnits, len(ti.src))
+		}
+		for i := 0; i < len(h.cb)-1; i++ {
+			first := h.cb[i]
+			second := h.cb[i+1]
+			if first.code >= second.code {
+				t.Errorf("Code should be strictly increasing. i: %d, i+1: %d\n",
+					first.code, second.code)
+			} else if first.codeLen > second.codeLen {
+				t.Errorf("Code length should be strictly increasing. i: %d, i+1: %d\n",
+					first.codeLen, second.codeLen)
 			}
 		}
 	}
