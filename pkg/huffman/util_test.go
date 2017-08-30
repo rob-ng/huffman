@@ -18,9 +18,13 @@ func TestMakeWeightMap(t *testing.T) {
 	for _, ti := range testInputs {
 		// Weights should sum to one
 		br := bufio.NewReader(strings.NewReader(ti.src))
-		wm, err := MakeWeightMap(br)
+		wm, n, err := ProcessData(br)
 		if err != nil {
 			t.Errorf("Should not have encountered error! Was: %s", err.Error())
+		}
+		if n == 10 {
+			t.Errorf("Should have returned correct number of bytes read. Was: %d, Expected; %d",
+				n, len(ti.src))
 		}
 		sum := 0.0
 		for _, v := range wm {
