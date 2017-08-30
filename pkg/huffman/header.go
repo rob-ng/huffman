@@ -46,7 +46,8 @@ func (h *Header) String() string {
 	line2 := units
 	line3 := numUnits
 
-	return fmt.Sprintf("%s\n%s\n%d\n%s", line1, line2, line3, headerDelim)
+	return fmt.Sprintf("%s%s%s%s%d%s%s",
+		line1, headerDelim, line2, headerDelim, line3, headerDelim, headerDelim)
 }
 
 // ExtractEncoder uses the Header's codebook to create a map between units and
@@ -121,7 +122,7 @@ func NewHeader(unitWeights map[byte]float64, numUnits int) *Header {
 // In nearly all cases, headerDesc should be the first n lines of an encoded
 // file, the last ending with 'headerDelim'.
 func DeriveHeader(headerDesc string) *Header {
-	lines := strings.Split(headerDesc, "\n")
+	lines := strings.Split(headerDesc, headerDelim)
 	line0 := strings.Split(lines[0], " ")
 	totals := make([]int, len(line0))
 	for i, t := range line0 {
@@ -159,7 +160,7 @@ func DeriveHeader(headerDesc string) *Header {
 //= Unexported
 //=============================================================================
 
-const headerDelim = "\n"
+const headerDelim = "\r\n"
 
 type cbEntry struct {
 	unit    byte
