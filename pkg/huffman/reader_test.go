@@ -10,7 +10,7 @@ import (
 func TestRead(t *testing.T) {
 	utf8src := "©©©»»»»かかπ"
 	br := bufio.NewReader(strings.NewReader(utf8src))
-	utf8WM, n, _ := ProcessData(br) //MakeWeightMap(br)
+	utf8H, _ := NewHeaderFromReader(br)
 	testInputs := []struct {
 		src string
 		//cb  Codebook
@@ -26,7 +26,7 @@ func TestRead(t *testing.T) {
 			}, 10),
 		}, {
 			utf8src,
-			NewHeader(utf8WM, n),
+			utf8H,
 		},
 	}
 

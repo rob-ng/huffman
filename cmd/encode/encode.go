@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
 	"io"
@@ -30,10 +29,11 @@ func main() {
 	defer outFile.Close()
 
 	var buf bytes.Buffer
-	br := bufio.NewReader(io.TeeReader(inFile, &buf))
-
-	unitWeights, numUnits, _ := huffman.ProcessData(br)
-	header := huffman.NewHeader(unitWeights, numUnits)
+	r := io.TeeReader(inFile, &buf)
+	header, err := huffman.NewHeaderFromReader(r)
+	if err != nil {
+		panic(err)
+	}
 	hw := huffman.NewWriter(outFile, header)
 	hw.Write(buf.Bytes())
 	hw.Flush()
