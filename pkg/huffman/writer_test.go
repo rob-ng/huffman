@@ -1,73 +1,92 @@
 package huffman
 
 import (
+	"bufio"
 	"bytes"
+	"strings"
 	"testing"
 )
 
-func TestWrite(t *testing.T) {
-
-	// Invariants
-	// Header:
-	// 1. First line should consist of space-separated numbers which should
-	//    sum to length of unique inputs.
-	// 2. Second line should exactly match unique inputs.
-	// Body:
-	// 1. Should exist
-
-	testInputs := []struct {
-		src string
-		h   *Header
+// TestWriteRead tests that writing then reading returns the initial input.
+func TestWriteRead(t *testing.T) {
+	writeReadTests := []struct {
+		input string
 	}{
-		{
-			"1112222334",
-			NewHeader(map[byte]float64{
-				49: 0.3,
-				50: 0.4,
-				51: 0.2,
-				52: 0.1,
-			}, 10),
-		},
+		// Latin characters
+		{input: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur metus elit, varius pellentesque porta sit amet, malesuada vel metus. Donec laoreet maximus enim, vel semper augue vehicula sed. Etiam vel ex in velit tempus euismod a non libero. Aenean aliquam sodales metus eget convallis. Curabitur sit amet eleifend dui, a tristique est. Vestibulum vehicula a tortor id ultricies. Nunc quis justo nec dui aliquet convallis. Curabitur condimentum eu massa eu efficitur. Phasellus lacinia nibh metus, vitae faucibus augue hendrerit vitae. Maecenas at tortor eu enim gravida pharetra a a arcu. Mauris sem orci, rhoncus sed cursus non, posuere vehicula nunc. Donec quam nulla, elementum sed rutrum quis, auctor sit amet nisi."},
+		// Non-Latin characters
+		{input: "優表然択間文井著謙然作連答言遣率。日愛三郡使愛設卒内薄予委禁違掛。点円紙帰局都海以市動注千津堀。意質会再山控柴変無提金燃型光老。表生覚優取掲裁大終図大従理招権追仕。報漢禁質防転出演車価半場紀津止地関聞周。慣宗後不投大競要半読動息中地式。世逆量乱読反群身環無賀予壇。種重道畔掲比罪仕謙出刊終著明月改装社件況。"},
+		// Input with new lines
+		{input: "This strings consists\nof multiple lines.\nNew lines are\nOK!"},
+		// Input with carriage returns
 	}
 
-	for _, ti := range testInputs {
-		var out bytes.Buffer
-		hw := NewWriter(&out, ti.h)
-		hw.Write([]byte(ti.src))
-		hw.Flush()
+	for _, test := range writeReadTests {
+		var wrote bytes.Buffer
+		r := strings.NewReader(test.input)
 
-		if out.Len() == 0 {
-			t.Errorf("Encoded data should have been written to buffer")
-		}
-
-		//fmt.Printf("%v\n", out.Bytes())
-
-		/*header1, _ := out.ReadString('\n')
-		header1Values := strings.Split(strings.Trim(header1, "\n"), " ")
-		header1Total := 0
-		for _, n := range header1Values {
-			val, _ := strconv.Atoi(n)
-			header1Total += val
-		}
-		if header1Total != len(ti.h.cb) {
-			t.Errorf("Sum of values in first line of header should equal number of entries in codebook. Was: %d, Expected; %d",
-				header1Total, len(ti.h.cb))
-		}
-
-		header2, _ := out.ReadString('\n')
-		header2 = strings.Trim(header2, "\n")
-		if len(header2) != len(ti.h.cb) {
-			t.Errorf("Second line of header should be exactly as long as codebook")
-		}
-		header3, _ := out.ReadString('\n')
-		header3 = strings.Trim(header3, "\n")
-		if len(header3) == 0 {
-			t.Errorf("Third line should contain unit count")
-		}
-
-		_, err := out.ReadByte()
+		header, err := NewHeaderFromReader(r)
 		if err != nil {
-			t.Errorf("Body should not be empty")
-		}*/
+			t.Errorf("Header.NewHeaderFromReader: %v", err)
+		}
+
+		hw := NewWriter(&wrote, header)
+
+		_, err = hw.Write([]byte(test.input))
+		if err != nil {
+			t.Errorf("Header.Write: %v", err)
+		}
+		_, err = hw.Flush()
+		if err != nil {
+			t.Errorf("Header.Flush: %v", err)
+		}
+
+		read := make([]byte, len(test.input))
+		br := bufio.NewReader(&wrote)
+		hr := NewReader(br)
+
+		// Once errors are added, add check to ensure Read does not
+		// return error.
+		hr.Read(read)
+
+		if strings.Compare(test.input, string(read)) != 0 {
+			t.Errorf("Input and final result do not match. Input: %s\nResult: %s\n",
+				test.input, read)
+		}
 	}
+}
+
+// TestFlush tests that any remaining bits in buffer are written.
+// Note sure how to test this.
+func TestFlush(t *testing.T) {
+
+}
+
+// TestClose tests that Writer can be successfully closed.
+func TestClose(t *testing.T) {
+
+}
+
+// TestEmpty tests that empty input still results in valid Writer.
+// FIX: This does not work at the moment.
+func TestEmpty(t *testing.T) {
+	/*emptyInput := ""
+	r := strings.NewReader(emptyInput)
+
+	header, err := NewHeaderFromReader(r)
+	if err != nil {
+		t.Errorf("Header.NewHeaderFromReader: %v", err)
+	}
+
+	var wrote bytes.Buffer
+	hw := NewWriter(&wrote, header)
+
+	_, err = hw.Write([]byte(emptyInput))
+	if err != nil {
+		t.Errorf("Header.Write: %v", err)
+	}
+	_, err = hw.Flush()
+	if err != nil {
+		t.Errorf("Header.Flush: %v", err)
+	}*/
 }
