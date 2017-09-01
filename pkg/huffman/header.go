@@ -109,7 +109,9 @@ func NewHeader(unitWeights map[byte]float64, numUnits int) *Header {
 		cb[i].code = code
 		code = (code + 1) << uint(cb[i+1].codeLen-cb[i].codeLen)
 	}
-	cb[i].code = code
+	if i < len(cb) {
+		cb[i].code = code
+	}
 
 	header := &Header{
 		cb:       cb,
