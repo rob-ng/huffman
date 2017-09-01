@@ -56,21 +56,9 @@ func TestWriteRead(t *testing.T) {
 	}
 }
 
-// TestFlush tests that any remaining bits in buffer are written.
-// Note sure how to test this.
-func TestFlush(t *testing.T) {
-
-}
-
-// TestClose tests that Writer can be successfully closed.
-func TestClose(t *testing.T) {
-
-}
-
 // TestEmpty tests that empty input still results in valid Writer.
-// FIX: This does not work at the moment.
 func TestEmpty(t *testing.T) {
-	/*emptyInput := ""
+	emptyInput := ""
 	r := strings.NewReader(emptyInput)
 
 	header, err := NewHeaderFromReader(r)
@@ -88,5 +76,5 @@ func TestEmpty(t *testing.T) {
 	_, err = hw.Flush()
 	if err != nil {
 		t.Errorf("Header.Flush: %v", err)
-	}*/
+	}
 }

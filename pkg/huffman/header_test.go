@@ -64,6 +64,8 @@ func TestNewHeaderFromReader(t *testing.T) {
 		src string
 	}{
 		{src: "thisisatestsourcestring"},
+		// Should work for empty input
+		{src: ""},
 	}
 	for _, ti := range testInputs {
 		r := strings.NewReader(ti.src)
@@ -72,7 +74,7 @@ func TestNewHeaderFromReader(t *testing.T) {
 			t.Errorf("Should have succesfully created new Header. Error: %s\n", err.Error())
 		}
 		if h.numUnits != len(ti.src) {
-			t.Errorf("Num units should match input. Was: %d, Expected: %d\n",
+			t.Errorf("Num units should match input length. Was: %d, Expected: %d\n",
 				h.numUnits, len(ti.src))
 		}
 		for i := 0; i < len(h.cb)-1; i++ {
