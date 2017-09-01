@@ -52,8 +52,7 @@ func (hr *Reader) Read(p []byte) (n int, err error) {
 		if headerDesc, hr.err = hr.readHeader(); hr.err != nil {
 			return 0, hr.err
 		}
-		//hr.h, hr.err = DeriveHeader(headerDesc)
-		if hr.h = DeriveHeader(headerDesc); hr.err != nil {
+		if hr.h, hr.err = DeriveHeader(headerDesc); hr.err != nil {
 			return 0, hr.err
 		}
 		hr.decoder = hr.h.ExtractDecoder()
