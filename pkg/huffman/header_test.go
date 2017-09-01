@@ -109,7 +109,10 @@ func TestDeriveHeader(t *testing.T) {
 	}
 
 	for _, ti := range testInputs {
-		h := DeriveHeader(ti.desc)
+		h, err := DeriveHeader(ti.desc)
+		if err != nil {
+			t.Errorf("DeriveHeader: %v", err)
+		}
 		if h.numUnits != ti.numUnits {
 			t.Errorf("Num units should match input. Was: %d, Expected: %d\n",
 				h.numUnits, ti.numUnits)

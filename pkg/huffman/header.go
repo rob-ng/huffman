@@ -38,7 +38,6 @@ func (h *Header) String() string {
 	}
 	totalsStr := make([]string, maxBitLen)
 	for i, _ := range totals {
-		// Error handling later
 		totalsStr[i] = strconv.Itoa(totals[i])
 	}
 	numUnits := h.numUnits
@@ -122,13 +121,12 @@ func NewHeader(unitWeights map[byte]float64, numUnits int) *Header {
 // NewHeaderFromReader reads data from a data stream, recording the values in
 // the stream and their frequency. This information is then used to create and
 // return a Header.
-func NewHeaderFromReader(in io.Reader) (*Header, error) {
-	//weightMap = make(map[byte]float64)
+func NewHeaderFromReader(in io.Reader) (header *Header, err error) {
 	unitWeights := make(map[byte]float64)
 	var numUnits float64
 	currUnit := make([]byte, 1)
 	for {
-		_, err := in.Read(currUnit)
+		_, err = in.Read(currUnit)
 		if err != nil {
 			if err == io.EOF {
 				break
@@ -152,17 +150,20 @@ func NewHeaderFromReader(in io.Reader) (*Header, error) {
 // DeriveHeader recreates the Header described by headerDesc.
 // In nearly all cases, headerDesc should be the first n lines of an encoded
 // file, the last ending with 'headerDelim'.
-func DeriveHeader(headerDesc string) *Header {
+func DeriveHeader(headerDesc string) (header *Header, err error) {
 	lines := strings.Split(headerDesc, headerDelim)
 	line0 := strings.Split(lines[0], " ")
 	totals := make([]int, len(line0))
 	for i, t := range line0 {
-		// Error handling later
-		totals[i], _ = strconv.Atoi(t)
+		if totals[i], err = strconv.Atoi(t); err != nil {
+			return nil, err
+		}
 	}
 	units := []byte(lines[1])
-	// Error handling later
-	numUnits, _ := strconv.Atoi(lines[2])
+	var numUnits int
+	if numUnits, err = strconv.Atoi(lines[2]); err != nil {
+		return nil, err
+	}
 
 	code := 0
 	i := 0
@@ -180,11 +181,11 @@ func DeriveHeader(headerDesc string) *Header {
 		}
 	}
 
-	header := &Header{
+	header = &Header{
 		cb:       cb,
 		numUnits: numUnits,
 	}
-	return header
+	return header, nil
 }
 
 //=============================================================================

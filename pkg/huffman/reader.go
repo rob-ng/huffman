@@ -21,6 +21,7 @@ type Reader struct {
 	currByte   byte
 	bitPos     uint
 	readNext   bool
+	err        error
 }
 
 func NewReader(r *bufio.Reader) *Reader {
@@ -35,14 +36,25 @@ func NewReader(r *bufio.Reader) *Reader {
 		currByte:   0,
 		bitPos:     0,
 		readNext:   true,
+		err:        nil,
 	}
 }
 
+// Reads encoded data as decoded data into p.
 func (hr *Reader) Read(p []byte) (n int, err error) {
+	if hr.err != nil {
+		return 0, hr.err
+	}
+
 	if !hr.headerRead {
 		hr.headerRead = true
-		headerDesc := hr.readHeader()
-		hr.h = DeriveHeader(headerDesc)
+		var headerDesc string
+		if headerDesc, hr.err = hr.readHeader(); hr.err != nil {
+			return 0, hr.err
+		}
+		if hr.h, hr.err = DeriveHeader(headerDesc); hr.err != nil {
+			return 0, hr.err
+		}
 		hr.decoder = hr.h.ExtractDecoder()
 	}
 
@@ -50,18 +62,19 @@ func (hr *Reader) Read(p []byte) (n int, err error) {
 	bi := 0
 	for {
 		if hr.readNext {
-			b, err := hr.r.ReadByte()
-			if err != nil {
-				return 0, nil
+			var b byte
+			if b, hr.err = hr.r.ReadByte(); hr.err != nil {
+				return 0, hr.err
 			}
 			hr.currByte = b
 		}
 		for ; hr.bitPos < 8; hr.bitPos++ {
 			if n == len(p) {
 				hr.readNext = false
-				return n, nil
+				return n, hr.err
 			} else if hr.totalBytes >= hr.h.numUnits {
-				return n, io.EOF
+				hr.err = io.EOF
+				return n, hr.err
 			}
 			currBit := int((hr.currByte >> (7 - hr.bitPos)) & 1)
 			hr.codeBuf = (hr.codeBuf << 1) | currBit
@@ -87,15 +100,18 @@ func (hr *Reader) Read(p []byte) (n int, err error) {
 //# Unexported
 //#############################################################################
 
-func (hr *Reader) readHeader() string {
+func (hr *Reader) readHeader() (string, error) {
 	var buf bytes.Buffer
 	for {
 		// Error handling later
-		line, _ := hr.r.ReadString(headerDelim[len(headerDelim)-1])
+		line, err := hr.r.ReadString(headerDelim[len(headerDelim)-1])
+		if err != nil {
+			return "", err
+		}
 		buf.WriteString(line)
 		if len(line) == len(headerDelim) && bytes.HasSuffix(buf.Bytes(), []byte(headerDelim)) {
 			bufStr := buf.String()
-			return bufStr[0 : len(bufStr)-len(headerDelim)]
+			return bufStr[0 : len(bufStr)-len(headerDelim)], nil
 		}
 	}
 }
