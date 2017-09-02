@@ -37,7 +37,7 @@ func (h *Header) String() string {
 		units[i] = e.unit
 	}
 	totalsStr := make([]string, maxBitLen)
-	for i, _ := range totals {
+	for i := range totals {
 		totalsStr[i] = strconv.Itoa(totals[i])
 	}
 	numUnits := h.numUnits
@@ -48,32 +48,6 @@ func (h *Header) String() string {
 
 	return fmt.Sprintf("%s%s%s%s%d%s%s",
 		line1, headerDelim, line2, headerDelim, line3, headerDelim, headerDelim)
-}
-
-// ExtractEncoder uses the Header's codebook to create a map between units and
-// their associated code and code length.
-func (h *Header) ExtractEncoder() encoder {
-	enc := make(encoder)
-	for _, e := range h.cb {
-		v := enc[e.unit]
-		v.code = e.code
-		v.codeLen = e.codeLen
-		enc[e.unit] = v
-	}
-	return enc
-}
-
-// ExtractDecoder uses the Header's codebook to create a map between codes and
-// their associated unit and code length.
-func (h *Header) ExtractDecoder() decoder {
-	dec := make(decoder)
-	for _, e := range h.cb {
-		v := dec[e.code]
-		v.unit = e.unit
-		v.codeLen = e.codeLen
-		dec[e.code] = v
-	}
-	return dec
 }
 
 // NewHeader creates and returns a pointer to a new Header.
@@ -142,7 +116,7 @@ func NewHeaderFromReader(in io.Reader) (header *Header, err error) {
 		unitWeights[currUnit[0]]++
 		numUnits++
 	}
-	for i, _ := range unitWeights {
+	for i := range unitWeights {
 		unitWeights[i] = unitWeights[i] / numUnits
 	}
 
@@ -211,6 +185,32 @@ type encoder map[byte]struct {
 type decoder map[int]struct {
 	unit    byte
 	codeLen int
+}
+
+// extractEncoder uses the Header's codebook to create a map between units and
+// their associated code and code length.
+func (h *Header) extractEncoder() encoder {
+	enc := make(encoder)
+	for _, e := range h.cb {
+		v := enc[e.unit]
+		v.code = e.code
+		v.codeLen = e.codeLen
+		enc[e.unit] = v
+	}
+	return enc
+}
+
+// extractDecoder uses the Header's codebook to create a map between codes and
+// their associated unit and code length.
+func (h *Header) extractDecoder() decoder {
+	dec := make(decoder)
+	for _, e := range h.cb {
+		v := dec[e.code]
+		v.unit = e.unit
+		v.codeLen = e.codeLen
+		dec[e.code] = v
+	}
+	return dec
 }
 
 //-----------------------------------------------------------------------------

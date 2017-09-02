@@ -15,7 +15,14 @@ func TestHeaderString(t *testing.T) {
 		numUnits: 10,
 	}
 
-	h.String()
+	headStr := h.String()
+	delim := "\r\n"
+	wantDelims := 4
+	gotDelims := strings.Count(headStr, delim)
+	if gotDelims != wantDelims {
+		t.Errorf("Header string should contain proper number of delimiters. Want %d, Got %d", wantDelims, gotDelims)
+	}
+
 }
 
 // Will want to also check that no code is prefix of any other
@@ -52,7 +59,7 @@ func TestNewHeader(t *testing.T) {
 					first.codeLen, second.codeLen)
 			} else if first.codeLen != second.codeLen &&
 				ti.unitWeights[first.unit] < ti.unitWeights[second.unit] {
-				t.Errorf("Larger weight should be correlated with shorter code. i: %d, i+1: %d\n",
+				t.Errorf("Larger weight should be correlated with shorter code. i: %f, i+1: %f\n",
 					ti.unitWeights[first.unit], ti.unitWeights[second.unit])
 			}
 		}

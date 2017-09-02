@@ -24,7 +24,7 @@ type Writer struct {
 
 // NewWriter returns a new Writer.
 func NewWriter(w io.Writer, h *Header) *Writer {
-	enc := h.ExtractEncoder()
+	enc := h.extractEncoder()
 	return &Writer{
 		w:           w,
 		wroteHeader: false,
