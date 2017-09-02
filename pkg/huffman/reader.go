@@ -10,6 +10,7 @@ import (
 //# Exported
 //#############################################################################
 
+// A Reader reads encoded data from an underlying bufio.Reader and decodes it.
 type Reader struct {
 	headerRead bool
 	r          *bufio.Reader
@@ -24,6 +25,7 @@ type Reader struct {
 	err        error
 }
 
+// NewReader initializes and returns a new Reader.
 func NewReader(r *bufio.Reader) *Reader {
 	return &Reader{
 		headerRead: false,
@@ -40,7 +42,8 @@ func NewReader(r *bufio.Reader) *Reader {
 	}
 }
 
-// Reads encoded data as decoded data into p.
+// Read reads encoded data from hr's underlying bufio.Reader, decodes it, and
+// reads the decoded result into p.
 func (hr *Reader) Read(p []byte) (n int, err error) {
 	if hr.err != nil {
 		return 0, hr.err
@@ -100,6 +103,7 @@ func (hr *Reader) Read(p []byte) (n int, err error) {
 //# Unexported
 //#############################################################################
 
+// readHeader extracts the Header description from an encoded file.
 func (hr *Reader) readHeader() (string, error) {
 	var buf bytes.Buffer
 	for {

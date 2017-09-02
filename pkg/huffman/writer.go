@@ -8,6 +8,7 @@ import (
 //# Exported
 //#############################################################################
 
+// writeBufSize is the size of the internal buffer that is used in Write().
 const writeBufSize = 1024
 
 // A Writer writes encoded data to an underlying io.Writer.

@@ -13,10 +13,10 @@ import (
 //= Exported
 //=============================================================================
 
-// A Header
+// A Header describes how a file was / should be encoded.
 type Header struct {
-	cb       codebook
-	numUnits int
+	cb       codebook // Sorted descriptions of units and their codes.
+	numUnits int      // Number of values originally encoded.
 }
 
 // String returns a string "representation" of the header.
@@ -78,7 +78,7 @@ func (h *Header) ExtractDecoder() decoder {
 
 // NewHeader creates and returns a pointer to a new Header.
 // To do this, it needs to be given the number of units (bytes) in the file, as
-// well as a weight for each such unit (usually its frequency within the file).
+// well as a weight for each unit (usually its frequency within the file).
 func NewHeader(unitWeights map[byte]float64, numUnits int) *Header {
 	leaves := newHuffTree(unitWeights)
 	cb := make(codebook, len(leaves))
@@ -249,9 +249,8 @@ func (htpq *huffTreePQ) Pop() interface{} {
 }
 
 // newHuffTree creates a new Huffman tree.
-// The function returns the leaves of the tree, rather than its root.
-// This was done because most callers of this function want access to the
-// tree's leaves.
+// Note that the function returns the leaves of the tree, rather than its root,
+// as only a leaf's relation to root is needed to create a Huffman code.
 func newHuffTree(weightMap map[byte]float64) (leaves []*huffTree) {
 	treePQ := make(huffTreePQ, len(weightMap))
 	leaves = make([]*huffTree, len(weightMap))
